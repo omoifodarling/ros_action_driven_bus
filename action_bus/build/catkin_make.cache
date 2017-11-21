@@ -1,0 +1,2 @@
+navya_control:navya_description:navya_gazebo
+-DCATKIN_DEVEL_PREFIX=/home/darling/Desktop/navya_working_copy/devel -DCMAKE_INSTALL_PREFIX=/home/darling/Desktop/navya_working_copy/install -G Unix Makefiles

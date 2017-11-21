@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC -std=c++11  -shared -Wl,-soname,libNavyaDriver.so -o /home/darling/Desktop/navya_working_copy/devel/lib/libNavyaDriver.so CMakeFiles/NavyaDriver.dir/busdriver.cpp.o  -L/usr/lib/x86_64-linux-gnu/gazebo-7/plugins 

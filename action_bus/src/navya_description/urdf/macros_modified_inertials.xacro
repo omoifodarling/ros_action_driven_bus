@@ -1,0 +1,1203 @@
+<?xml version="1.0"?>
+
+<robot name="myMcros" xmlns:xacro="http://www.ros.org/wiki/xacro"
+xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller">
+	
+	
+	
+<property name="chassis_height" value="0.05"/>
+<property name="chassis_length" value="2.4"/>
+<property name="chassis_width" value="2.1"/>
+<property name="chassis_mass" value="${(chassis_width*chassis_length*chassis_height*2)}"/>
+<property name="light_radius" value="0.04" /> 
+  <property name="light_height" value="0.02" />
+  <property name="light_mass" value="0.5" /> <!-- in kg-->
+
+  <property name="M_PI" value="3.141592654" />
+  <property name="base_x_origin_to_front_origin" value="0.25" />
+  <property name="base_y_origin_to_front_origin" value="0.3" />
+  <property name="base_z_origin_to_front_origin" value="0.0" />
+
+<property name="engine_length" value="0.04"/>
+<property name="engine_width" value="0.03"/>
+<property name="engine_height" value="0.02"/>
+<xacro:property name="camera_link" value="0.02" /> <!-- Size of square 'camera' box -->
+
+
+
+
+<!-- box inertia -->
+<xacro:macro name="box_inertia" params="m h b d">
+	<origin xyz="0 0 0.029335" rpy="0 0 0" />
+	<inertial>
+	<mass value="${m}"/>
+	<inertia  ixx="${(1/12)*m*(h*h+d*d)}" ixy = "0.0" ixz = "0.0"
+              iyy="${(1/12)*m*(b*b+d*d)}" iyz = "0.0"
+              izz="${(1/12)*m*(h*h+b*b)}" /> 
+	</inertial>
+</xacro:macro>
+
+<!-- sphere inertia -->
+<xacro:macro name="sphere_inertia" params="m r">
+	<origin xyz="0 0 0.029335" rpy="0 0 0" />
+	<inertial>
+	<mass value="${m}"/>
+	
+	<inertia  ixx="${(2/5)*m*(r*r)}" ixy = "0.0" ixz = "0.0"
+              iyy="${(2/5)*m*(r*r)}" iyz = "0.0"
+              izz="${(2/5)*m*(r*r)}" /> 
+	</inertial>
+</xacro:macro>
+
+<!-- cylinder inertia -->
+<xacro:macro name="cylinder_inertia" params="m r l">
+	<origin xyz="0 0 0.0029335" rpy="0 0 0" />
+	<inertial>
+	<mass value="${m}"/>
+	<inertia  ixx="${(1/12)*m*(3*r*r+l*l)}" ixy = "0.0" ixz = "0.0"
+              iyy="${(1/12)*m*(3*r*r+l*l)}" iyz = "0.0"
+              izz="${.5*m*(3*r*r)}" /> 
+	</inertial>
+</xacro:macro>
+
+<!-- long cylinder: axle inertia -->
+<xacro:macro name="axle_inertia" params="m l">
+	<origin xyz="0 0 0.0029335" rpy="0 0 0" />
+	<inertial>
+	<mass value="${m}"/>
+	<inertia  ixx="${(1/12)*m*(l*l)}" ixy = "0.0" ixz = "0.0"
+              iyy="0.0" iyz = "0.0"
+              izz="${.5*m*(3*l*l)}" /> 
+	</inertial>
+</xacro:macro>
+
+<!-- inertia macros -->
+<xacro:macro name="default_inertia" params="m">
+	<origin xyz="0 0 0.0059335" rpy="0 0 0" />
+	<inertial>
+	<mass value="${m}"/>
+	<inertia  ixx="1.0" ixy = "0.0" ixz = "0.0"
+              iyy="1.0" iyz = "0.0"
+              izz="1.0" /> 
+	</inertial>
+</xacro:macro>
+
+<!-- laser -->
+<xacro:macro name="laser" params="name rX rY rZ tZ tX tY par fX fY fZ">
+	
+<joint name="${name}_laser_joint" type="fixed">
+	<axis xyz="${rX} ${rY} ${rZ}" />
+	<origin xyz="${tX} ${trY} ${tZ}" rpy="${fX*M_PI} ${fY*M_PI} ${fZ*M_PI}"/>
+	<limit velocity="0.11111" effort="20" friction="20.0" 
+	lower="-${M_PI}" upper="${M_PI}"/>
+    <parent link="${par}"/>
+    <child link="${name}_laser_link"/>
+  </joint>
+
+  <!-- Hokuyo Laser -->
+  <link name="${name}_laser_link">
+    <collision>
+      <origin xyz="0 0.0 0.03" rpy="0 0 0"/>
+      <geometry>
+    <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0.0 0.03" rpy="0 0 0"/>
+      <geometry>
+		  <!--box size="0.01 0.01 0.01"/-->
+        <mesh filename="package://navya_description/meshes/hokuyo.dae"/>
+      </geometry>
+    </visual>
+	<xacro:box_inertia m="0.1" h="0.01" b="0.01" d="0.01"/>
+  </link>
+   <gazebo reference="${name}_laser_link">
+	<sensor type="ray" name="${name}_hokuyo_sensor">
+    <!--sensor type="gpu_ray" name="${name}_hokuyo_sensor"-->
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters based on published spec for Hokuyo laser
+               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+               reading. -->
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <robotNamespace>/navya_bus</robotNamespace>
+        <topicName>${name}_laser/scan</topicName>
+        <frameName>${name}_laser_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+</xacro:macro>
+
+
+	<!-- camera -->  
+  <xacro:macro name="my_camera" params="pos parent fX fY fZ tX tY tZ rX rY rZ">
+    <link name="${pos}_camera_link">
+		<xacro:box_inertia m="0.1" h="0.01" b="0.01" d="0.01"/>
+      <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+    <box size="${camera_link} ${camera_link} ${camera_link}"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+    <box size="${camera_link} ${camera_link} ${camera_link}"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+    <xacro:box_inertia m="1e-6" b="${camera_link}"
+     h="${camera_link}" d="${camera_link}"/>
+    </link>
+    <joint name="${pos}_camera_joint" type="revolute">
+        <parent link="${parent}"/>
+        <child link="${pos}_camera_link"/>
+         <origin xyz="${tX} ${tY} ${tZ}" rpy="${fX*M_PI} ${fY*M_PI} ${fZ*M_PI}"/>
+        <axis xyz="${rX} ${rY} ${rZ}" />
+        <limit velocity="0.11111" effort="20" friction="20.0" lower="0" 
+        upper="0"/>
+    </joint>
+    <transmission name="${pos}_camera_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${pos}_camera_joint" >
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${pos}_camera_joint_motor">
+		  <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+   
+    <gazebo reference="${pos}_camera_link">
+      <sensor type="camera" name="${pos}_camera">
+        <update_rate>30.0</update_rate>
+        <camera name="${pos}">
+			<!--visualize>true</visualize-->
+         <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>800</width>
+          <height>800</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+            <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1]. -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+        </camera>
+
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+			<material>Gazebo/Gold</material>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>30.0</updateRate>
+          <visualize>true</visualize>
+          <cameraName>${pos}_camera</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>${pos}_camera_link</frameName>
+          <robotNamespace>/navya_bus</robotNamespace>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+  
+  
+  <!-- camera 2 -->
+  <xacro:macro name="camera_sensor" params="name">
+  <sensor type="camera" name="${name}_sensor">
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>320</width>
+              <height>240</height>
+            </image>
+            <clip>
+              <near>0.1</near>
+              <far>100</far>
+            </clip>
+          </camera>
+          <always_on>1</always_on>
+          <update_rate>30</update_rate>
+          <visualize>true</visualize>
+</sensor>
+<gazebo reference="${name}_camera">
+      <sensor type="camera" name="${name}_sensor">
+        <update_rate>30.0</update_rate>
+        <camera>
+          <pose>0 0 0 0 0 0</pose>
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <format>R8G8B8</format>
+            <width>1020</width>
+            <height>1020</height>
+          </image>
+          <clip>
+			   <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1]. -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+            <near>0.01</near>
+            <far>100</far>
+          </clip>
+        </camera>
+
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>navya_bus/${name}_sensor</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>${name}_camera</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+</xacro:macro>
+  
+  
+	<!-- doors -->
+	<xacro:macro name="door" params="lr parent mX mY mZ trX trY trZ fY fX
+	 color l w h m rcX rcY rcZ"> <!--lr : left,right-->
+    <link name="${lr}_door">
+      <visual> 
+		<geometry>
+          <box size="${w} ${l} ${h}"/>
+        </geometry>
+       <material name="${color}"/>
+      </visual>
+      <collision>
+		<geometry>
+			<box size="${w} ${l} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${w}"
+     h="${l}" d="${h}"/>
+      </link>
+   <myColor col="${color}" ref="${lr}_door"/>
+   <xacro:my_camera parent="${lr}_door" pos="${lr}_door"
+   rX="${mX}" rY="${mY}" rZ="${mZ}" tX="${rcZ}" tZ="${0}" tY="0"
+   fX="${rcX}" fY="${rcY}" fZ="${0}"/>
+   <!--xacro:laser name="${lr}_door" rX="0" rY="0" rZ="1" tZ="0.0" par="${lr}_door"
+   fX="0" fY=".5" fZ="0"/-->
+    <joint name="${lr}_door_joint" type="prismatic">
+      <parent link="${parent}"/>
+      <child link="${lr}_door"/>
+     <!--origin xyz="0 0 0" rpy="0 0 0"/--> 
+      <origin xyz="${trX} ${trY} ${trZ}" rpy="${fX*M_PI} ${fY*M_PI}  0 " />
+      <axis xyz="${mX} ${mY} ${mZ}"/>
+      <limit effort="100" velocity="0.08" lower="-${h*1.2}" upper="${0}"/>
+      <joint_properties damping="1000.0" friction="100.0"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${lr}_door_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${lr}_door_joint" >
+       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${lr}_door_joint_motor">
+		  <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+	
+	<!-- front & rear guard -->
+	<xacro:macro name="guard" params="fr parent trX trY trZ flipY flipX color l w h m"> <!--bh : bonnet, hood-->
+    <link name="${fr}_guard">
+      <visual>
+		  <origin xyz="0 0 0" rpy="0  0 0"/>
+		  <material name="${color}"/>
+        <geometry>
+          <box size="${w} ${l} ${h}"/>
+        </geometry>
+      </visual>
+      <collision>
+		   <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+           <box size="${w} ${l} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${w}"
+     h="${l}" d="${h}"/>
+      </link>
+      
+	<myColor col="${color}" ref="${fr}_guard"/>
+	<xacro:my_camera parent="${fr}_guard" pos="${fr}_guard" 
+		rX="0" rY="1" rZ="0" tZ="0.0" tY="0" tX="${0.08}"
+		fX="0" fY="-.5" fZ="0"/>
+		
+	<xacro:laser name="${fr}_guard" rX="0" rY="1" tX="0" tY="0" rZ="0" tZ="0.05" 
+	par="${fr}_guard" fX="0" fY="-.5" fZ="0.0"/>
+	
+    <joint name="${fr}_guard_joint" type="prismatic">
+      <parent link="${parent}"/>
+      <child link="${fr}_guard"/>
+      <origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${flipY*M_PI}  0"/>
+      <limit velocity="0.01" friction="120" effort="100.0" lower="0" upper="0.0000104719755" />
+    </joint>
+	<transmission name="${fr}_guard_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fr}_guard_joint" >
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fr}_guard_joint_motor">
+		  <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+    
+  </xacro:macro>
+
+<!-- door handle <origin xyz="${tX} ${tY} ${tZ}" rpy="${fX*M_PI} 0 0"/>-->
+<xacro:macro name="door_handle" params="type par l w h tX tY tZ fX color">
+	<link name="${type}_door_handle">
+		
+		<!--origin xyz="${tX} ${tY} ${tZ}" rpy="0 0 0"/-->
+		<visual>
+			<geometry>
+				<box size="${w} ${l} ${h}"/>
+			<!--mesh filename="~/.gazebo/models/pioneer2dx/meshes/darlingtons_car_handle.dae">
+			<scale>${w} ${l} ${h}</scale>
+			</mesh-->
+			</geometry>
+			<material name="${color}"/>
+		</visual>
+		<collision>
+			<geometry>
+			<box size="${w} ${l} ${h}"/>
+			</geometry>
+		</collision>
+		 <xacro:box_inertia m="${1.2}" b="${w}"
+     h="${l}" d="${h}"/>
+	</link>
+	<myColor col="${color}" ref="${type}_door_handle"/>
+	<joint name="${type}_door_handle_joint" type="prismatic">
+	<parent link="${par}"/>
+	<child link="${type}_door_handle"/>
+	<axis xyz="0 0 1"/>
+	<origin xyz="${tX} ${tY} ${tZ}" rpy="${fX*M_PI} 0 0"/>
+	<limit effort="10" velocity="0.0" friction="120.0" lower="-${w/3}" upper="${w/2}"/>
+	</joint>
+	<!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${type}_door_handle_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${type}_door_handle_joint" >
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${type}_door_handle_joint_motor">
+		  <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+</xacro:macro>
+
+<!-- boot guard -->
+<xacro:macro name="boot_guard" params="fr parent trX trY trZ flipY flipZ color l w h m"> <!--bh : bonnet, hood-->
+    <link name="${fr}_guard">
+	<!--origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${flipY*M_PI}  ${flipZ*M_PI}"/-->
+      <visual>
+		  <origin xyz="${-trX/2} ${trY} ${trZ}" rpy="0 0 0"/>
+		  <material name="${color}"/>
+        <geometry>
+          <box size="${w} ${l} ${h}"/>
+        </geometry>
+       
+      </visual>
+      <collision>
+		   <origin xyz="${-trX/2} ${trY} ${trZ}" rpy="0 0 0"/>
+        <geometry>
+           <box size="${w} ${l} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${w}"
+     h="${l}" d="${h}"/>
+      </link>
+      <xacro:my_camera parent="${fr}_guard" pos="boot" 
+		rX="0" rY="1" rZ="0" tX="${-trX*(0.5)}" tY="${trY}" tZ="${trZ+0.05}"
+		fX="0" fZ="0" fY="-.5"/>
+	<xacro:laser name="boot" rX="0" rY="0" rZ="0"  tX="${-trX*(3/4)}" 
+	tY="${trY}" tZ="${trZ+.05}" fX="0" fY="-.5" fZ="0" par="${fr}_guard"/>
+   <myColor col="${color}" ref="${fr}_guard"/>
+    <joint name="${fr}_guard_joint" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${fr}_guard"/>
+      <origin xyz="${trX/2} ${trY/2} ${trZ/2}" rpy="0 ${flipY*M_PI}  ${flipZ*M_PI}"/>
+      <axis xyz="0 1 0"/>
+      <limit velocity="0.01" friction="120" effort="100.0" lower="0" upper="0.0000104719755" />
+      <!--limit velocity="0.01" friction="120" effort="100.0" lower="0" upper="1.04719755" /-->
+    </joint>
+	<transmission name="${fr}_guard_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fr}_guard_joint" >
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fr}_guard_joint_motor">
+		  <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>    
+  </xacro:macro>
+
+<!-- door anchor -->
+<xacro:macro name="door_anchor" params="lr par col tX tY fc tZ fX fY fZ l w h mX mY mZ m color">
+<link name="${lr}_door_anchor">
+      <visual>
+		  <material name="${col}"/>
+		 <origin xyz="0 0 0" rpy="0 0 0" /> 
+        <geometry>
+          <box size="${l} ${w} ${h}"/>
+        </geometry>
+      </visual>
+      <collision>
+		 <origin xyz="0 0 0" rpy="0 0 0" /> 
+        <geometry>
+           <box size="${l} ${w} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${l}" h="${w}" d="${h}"/>
+      </link>
+	<myColor col="${color}" ref="${lr}_door_anchor" />
+	<!-- fY was 0 -->
+	<xacro:my_camera parent="${lr}_door_anchor" pos="${lr}_door_anchor"
+		rX="1" rY="0" rZ="0" tX="0" tY="0" tZ="${(0.07)}"
+		fX="0" fY="0" fZ="${fc}"/>
+		 <!--xacro:my_camera parent="${lr}_door" pos="${lr}_door"
+   rX="1" rY="0" rZ="0" tX="0" tY="${-0.05}" tZ="0"
+   fX="${rcX}" fY="${rcY}" fZ="${rcZ}"/-->
+    <joint name="${lr}_door_anchor_joint" type="prismatic">
+      <parent link="${par}"/>
+      <child link="${lr}_door_anchor"/>
+      <axis xyz="${mX} ${mY} ${mZ}"/>
+      <!-- door opens by itself so closing it here -->
+       <!--limit effort="0" velocity="0.0" friction="100.0" lower="0" upper="${l}"/-->
+      <limit effort="10000" velocity=".50" friction="1000.0" lower="0" upper="0"/>
+      <origin xyz="${tX} ${tY} ${tZ}" rpy="${fX*M_PI} ${fY*M_PI} ${fZ*M_PI}" /> 
+      <!--origin xyz="0 0 0" rpy="0 0 0" /--> 
+    </joint>
+     <transmission name="${lr}_door_anchor_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${lr}_door_anchor_joint" >
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${lr}_door_anchor_joint_motor">
+		  <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+</xacro:macro>
+
+	<!-- chassis body (side) -->
+	<xacro:macro name="chassis_body" params="fb lr parent trX trY trZ flipY flipX color l w h m"> <!--fr : front,rear-->
+    <link name="${lr}_${fb}_chassis">
+      <visual>
+		  <material name="${color}"/>
+		  <origin xyz="0 0 0" rpy="0 0 0" /> 
+        <geometry>
+          <box size="${l} ${w} ${h}"/>
+        </geometry>
+      </visual>
+      <collision>
+		 <origin xyz="0 0 0" rpy="0 0 0" /> 
+        <geometry>
+           <box size="${l} ${w} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${l}" h="${w}" d="${h}"/>
+      </link>
+	<myColor col="${color}" ref="${lr}_${fb}_chassis" />
+    <joint name="${lr}_${fb}_chassis_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${lr}_${fb}_chassis"/>
+      <origin xyz="${trX} ${trY} ${trZ}" rpy="${flipX*M_PI} ${flipY*M_PI}  0" />
+      <limit velocity="0.01" friction="120" effort="100.0" lower="0" upper="0.0000104719755" /> 
+    </joint>
+     <!--transmission name="${lr}_${fb}_chassis_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${lr}_${fb}_chassis_joint" >
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${lr}_${fb}_chassis_joint_motor">
+		  <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission-->
+
+  </xacro:macro>
+
+	<!-- wheel wr:wheel radius, wl: length, xOr:x origin to base, yOr:y origin to base's y,  zOr-->
+	 <xacro:macro name="wheel" params="fb lr wr wl wm parent tZ flipX"> 
+    <link name="${fb}_${lr}_wheel">
+      <visual>
+		<material name="Black"/>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+			<!--mesh filename="model://car_wheel/meshes/car_wheel.dae"/-->
+          <cylinder length="${wl}" radius="${wr}" />
+        </geometry>
+       
+      </visual>
+      <collision>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${wl}" radius="${wr}" />
+        </geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${wm}" l="${wl}" r="${wr}"/>
+    </link>
+
+    <gazebo reference="${fb}_${lr}_wheel">
+      <mu1 value="3000.0"/>
+      <mu2 value="2000.0"/>
+      <kp  value="10000000.0" />
+      <kd  value="1.0" />
+      <fdir1 value="1 0 0"/>
+      <material>Gazebo/Black</material>
+    </gazebo>
+
+    <joint name="${fb}_${lr}_wheel_joint" type="continuous">
+      <parent link="${parent}"/>
+      <child link="${fb}_${lr}_wheel"/>
+       <axis xyz="0 0 -1" rpy="0 0 0" />
+      <origin xyz="0 0 ${tZ}" rpy="${flipX*M_PI} 0 0" /> 
+      <limit effort="10" velocity="30.0" friction="0"/>
+      <!-- add friction first otherwise, it keeps moving -->
+      <dynamics damping="0.7"/>
+      <!--joint_properties damping="10000.0" friction="100.0"/-->
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${fb}_${lr}_wheel_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_wheel_joint" >
+		<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_wheel_joint_motor">
+		 <hardwareInterface>VelocityJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+  
+	<!-- light (spheres) -->
+  <xacro:macro name="light_inertia_box" params="m r">
+    <inertia  ixx="${m}*${r}" ixy = "0" ixz = "0"
+              iyy="(${m}*${r})/6" iyz = "0"
+              izz="(${m}*${r})/2}" /> 
+  </xacro:macro>
+  
+  <!-- type: trafficator, head, break, or rear, I need to be able to send msg/ signals to the joint. Otherwise, they could be fixed-->
+  <xacro:macro name="light_sphere" params="fb lr parent trX trY trZ type color r m"> <!--fb : front, rear ; lr: left, right. type: trafficator, head, break, or rear-->
+    <link name="${fb}_${lr}_${type}_light">
+		<origin xyz="0 0 0" rpy="${0.5*M_PI} 0 0" /> 
+      <visual>
+		  <material name="${color}"/>
+        <geometry>
+          <sphere radius="${r}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+           <sphere radius="${r}" />
+        </geometry>
+      </collision>
+      <xacro:sphere_inertia m="${m}" r="${r}"/>
+    </link>
+    
+    <joint name="${fb}_${lr}_${type}_light_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${fb}_${lr}_${type}_light"/>
+       <origin xyz="${-trZ} ${trY} 0" rpy="0 0 0" />
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit effort="100" velocity="0" upper="0.0001" lower="0.0000"/>
+      <!--joint_properties damping="10.0" friction="10.0"/-->
+    </joint>
+<xacro:myColor col="${color}" ref="${fb}_${lr}_${type}_light"/>
+    <!-- Transmission is important to link the joints and the controller -->
+    <!--transmission name="${fb}_${lr}_{type}_light_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_${type}_light_joint" >
+		<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_light_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission-->
+  </xacro:macro>
+	
+	<!-- light (boxes) -->
+	<xacro:macro name="light_box" params="fb lr parent trX trY trZ  flipY flipZ type color l w h m mY mZ"> <!--fb : front, rear ; lr: left, right. type: trafficator, head, break, or rear-->
+    <link name="${fb}_${lr}_${type}_light">
+		<origin xyz="${trX} ${trY} 0" rpy="0 0 0" /> 
+      <visual>
+		  <material name="${color}"/>
+        <geometry>
+          <box size="${l} ${h} ${w}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+           <box size="${l} ${h} ${w}"/>
+        </geometry>
+      </collision>
+    <xacro:box_inertia m="${m}" b="${w}" h="${l}" d="${h}"/>
+    </link>
+    <xacro:myColor col="${color}" ref="${fb}_${lr}_${type}_light"/>
+    <joint name="${fb}_${lr}_${type}_light_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${fb}_${lr}_${type}_light"/>
+       <axis xyz="0 ${mY} ${mZ}" rpy="0 0 0" />
+      <limit effort="100" velocity="0" upper="0.0001" lower="0.0000"/>
+      <origin xyz="${trX} ${trY} 0" rpy="${flipY*M_PI} 0 0" /> 
+    </joint>
+    <!-- Transmission is important to link the joints and the controller -->
+    <!--transmission name="${fb}_${lr}_${type}_light_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_${type}_light_joint" >
+		<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_${type}_light_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission-->
+  </xacro:macro>
+
+
+<!-- MyColor implementation -->
+	<xacro:macro name="myColor" params="col ref">
+		<gazebo reference="${ref}">
+			 <material>Gazebo/${col}</material>
+		</gazebo>
+	</xacro:macro>
+	
+	<!-- chassis-->
+<xacro:macro name="chassis_inertia" params="m">
+	 <mass value="${m}" />
+    <inertia  ixx="${chassis_length}*${chassis_width}*${chassis_height}*${m}" ixy = "0.0" ixz = "0.0" iyy="${m}*${chassis_length}*${chassis_height}*${m}" iyz = "0" izz="${chassis_height}*${m}" /> 
+</xacro:macro>
+
+
+
+<!-- unique_roof chassis -->
+ <xacro:macro name="roof_chassis" params="pos x y z r p yaw color tY par m l">
+<link name="${pos}_chassis">
+	<visual>
+		<material name="${color}"/>
+		<!--origin xyz="${x} ${y} ${z}" rpy=" ${r} ${p} ${yaw}"/-->
+		<geometry>
+			<box size="${l} ${chassis_width} ${chassis_height}"/>
+		</geometry>	
+	</visual>
+	<collision>
+		<!--origin xyz="${x} ${y} ${z}" rpy=" ${r} ${p} ${yaw}"/-->
+		<geometry>
+			<box size="${l} ${chassis_width} ${chassis_height}"/>
+		</geometry>
+	</collision>
+	<xacro:box_inertia m="${m}" h="${chassis_width}" b="${l}" d="${chassis_height}"/>
+</link>
+<xacro:myColor col="${color}" ref="${pos}_chassis"/>
+<joint name="${pos}_chassis_joint" type="prismatic">
+<parent link="${par}"/>
+<child link="${pos}_chassis"/>
+<origin xyz="${x} ${y} ${z}" rpy=" ${r} ${p} ${yaw}"/>
+<limit upper="0" lower="0" friction="1000000.0" velocity="10000.0" effort="100000.00"/>S
+</joint>
+ <transmission name="${pos}_chassis_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${pos}_chassis_joint" >
+		<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${pos}_chassis_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+</xacro:macro>
+	
+
+
+<!-- pos: base or roof -->
+ <xacro:macro name="chassis" params="pos x y z r p yaw color tY par m l">
+<link name="${pos}_link">
+	<visual>
+		<material name="${color}"/>
+		<origin xyz="${x} ${y} ${z}" rpy=" ${r} ${p} ${yaw}"/>
+		<geometry>
+			<box size="${l} ${chassis_width} ${chassis_height}"/>
+		</geometry>	
+	</visual>
+	<collision>
+		<origin xyz="${x} ${y} ${z}" rpy=" ${r} ${p} ${yaw}"/>
+		<geometry>
+			<box size="${l} ${chassis_width} ${chassis_height}"/>
+		</geometry>
+	</collision>
+	<xacro:box_inertia m="${m}" h="${chassis_width}" b="${l}" d="${chassis_height}"/>
+</link>
+<xacro:myColor col="${color}" ref="${pos}_link"/>
+<!--joint name="fixed" type="fixed">
+<parent link="${par}"/>
+<child link="${pos}_link"/>
+</joint-->
+ <!--transmission name="${pos}_link_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${pos}_chassis_joint" >
+		<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${pos}_link_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission-->
+</xacro:macro>
+	
+	<!-- pedals (acc,br,cl) -->
+	<xacro:macro name="pedal" params="type l w h parent trX trY trZ fY fZ m col"> 
+    <link name="${type}_pedal">
+		 <origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${fY*M_PI} ${fZ*M_PI}"/>
+      <visual>
+		  <material name="${col}"/>
+        <geometry>
+         <box size="${l} ${w} ${h}"/>
+        </geometry>
+       
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${l} ${w} ${h}"/>
+        </geometry>
+      </collision>
+     <xacro:box_inertia m="${m}" b="${w}" h="${l}" d="${h}"/>
+    </link>
+	<myColor col="${col}" ref="${type}_pedal"/>
+    <joint name="${type}_pedal_joint" type="prismatic">
+      <parent link="${parent}"/>
+      <child link="${type}_pedal"/>
+      <origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${fY*M_PI} ${fZ*M_PI}"/>
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <calibration rising="0.01"/>
+	  <dynamics damping="0.0" friction="0.0"/>
+	  <limit effort="30" velocity="0.0" lower="0.01" upper="0.1" />
+	  <safety_controller k_velocity="10" k_position="5" soft_lower_limit="-2.0" soft_upper_limit="0.5" />
+      <!--joint_properties damping="10.0" friction="2.0"/-->
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${type}_pedal_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${type}_pedal_joint" >
+		<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${type}_pedal_joint_motor">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+	
+	<!-- anchor cylinder for steering, acc, brk and clutch -->
+	<xacro:macro name="anchor_cylinder" params="type r l parent m trX trY trZ fY fZ"> 
+    <link name="${type}_anchor">
+      <visual>
+		  <material name="DarkGrey"/>
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+        <material name="Black" />
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </collision>
+     <xacro:cylinder_inertia m="${m}" l="${l}" r="${r}"/>
+    </link>
+    <!--gazebo reference="${type}_pedal">
+      <material>Gazebo/DarkGrey</material>
+    </gazebo-->
+    <joint name="${type}_anchor_joint" type="prismatic">
+      <parent link="${parent}"/>
+      <child link="${type}_anchor"/>
+      <axis xyz="0 1 0" rpy="0 0 0" />
+      <origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${fY*M_PI} ${fZ*M_PI}"/>
+      <limit effort="100" velocity="10" upper="0" lower="0"/>
+      <joint_properties damping="10.0" friction="100000.0"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${type}_anchor_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${type}_anchor_joint" >
+		  <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${type}_anchor_joint_motor">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+   
+  </xacro:macro>
+	
+	<!-- steering -->
+	<xacro:macro name="steering" params="type r l m parent trX trY trZ fY col"> 
+    <link name="${type}_wheel">
+      <visual>
+		  <material name="${col}"/>
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${m}" l="${l}" r="${r}"/>
+    </link>
+    <my_camera parent="${type}_wheel" pos="${type}_wheel"		 
+		rX="0" rY="1" rZ="0" tX="0" tY="0" tZ="0.04"
+		fX="0" fY="${-.368}" fZ="0"/>
+	<myColor col="${col}" ref="${type}_wheel"/>
+    <joint name="${type}_wheel_joint" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${type}_wheel"/>
+     <origin xyz="${trX} ${trY} ${trZ}" rpy="0 ${fY*M_PI} 0"/>
+      <axis xyz="0 0 1" rpy="0 0 ${M_PI*0.005556}" />
+      <limit effort="100.00" velocity="0.01" upper="${(2*M_PI)}" lower="${-(2*M_PI)}"/>
+      <joint_properties damping="10.0" friction="0.0"/>
+    </joint>
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${type}_wheel_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${type}_wheel_joint" >
+		<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${type}_wheel_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+   
+  </xacro:macro>
+  
+  <!-- front wheel rims -->
+	<xacro:macro name="front_wheel_rim" params="fb lr r l m parent tZ flipX up lo rY"> 
+    <link name="${fb}_${lr}_wheel_rim">
+      <visual>
+		  <material name="Brown"/>
+		  <origin xyz="0 0 0" rpy="0 0 0" /> 
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+        <material name="Black" />
+      </visual>
+      <collision>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${m}" l="${l}" r="${r}"/>
+    </link>
+
+    <gazebo reference="${fb}_${lr}_wheel_rim">
+      <material>Gazebo/Blue</material>
+    </gazebo>
+
+    <joint name="${fb}_${lr}_wheel_rim_joint" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${fb}_${lr}_wheel_rim"/>
+      <origin xyz="0 0 ${tZ}" rpy="0 0 0" />
+       <axis xyz="0 ${rY} 0" rpy="0 {rY} 0" />
+      <limit effort="1000000.00" velocity="1.00" friction="100.0" upper="${up*M_PI}" lower="${lo*M_PI}"/>
+       <!--limit effort="1000.00" velocity="0.00" friction="100.0" upper="0" lower="0"/-->
+      <joint_properties damping="120.0" friction="100.0"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${fb}_${lr}_wheel_rim_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_wheel_rim_joint" >
+		<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_wheel_rim_joint_motor">
+        <hardwareInterface>VelocityJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+   
+  </xacro:macro>
+	
+	<!-- rear wheel rims -->
+	<xacro:macro name="rear_wheel_rim" params="fb lr r l m parent tZ flipX"> 
+    <link name="${fb}_${lr}_wheel_rim"> 
+	
+      <visual>
+		  <material name="Brown"/>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+        <material name="Brown" />
+      </visual>
+      <collision>
+		 <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </collision>
+       <xacro:cylinder_inertia m="${m}" l="${l}" r="${r}"/>
+    </link>
+
+    <gazebo reference="${fb}_${lr}_wheel_rim">
+      <material>Gazebo/Brown</material>
+    </gazebo>
+
+    <joint name="${fb}_${lr}_wheel_rim_joint" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${fb}_${lr}_wheel_rim"/>
+      <origin xyz="0 0 ${tZ}" rpy="0 0 0" />
+      <axis xyz="0 1 0" rpy="0 1 0"/>
+      <limit effort="1000000.00" velocity="0.00" upper="${(M_PI)*0.00015}" lower="-${(M_PI)*0.00015}"/>
+      <joint_properties damping="120.0" friction="100.0"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${fb}_${lr}_wheel_rim_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_wheel_rim_joint" >
+		  <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface> 
+      </joint>
+      <actuator name="${fb}_${lr}_wheel_rim_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+   
+  </xacro:macro>
+	
+	<!-- axle -->
+	<xacro:macro name="axle" params="fb r l m parent tX tZ flipX xOr yOr zOr"> 
+    <link name="${fb}_axle">
+		
+      <visual>
+		  <material name="Brown"/>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+        <material name="Black" />
+      </visual>
+      <collision>
+		  <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${l}" radius="${r}" />
+        </geometry>
+      </collision>
+      <xacro:axle_inertia m="${m}" l="${l}"/>
+    </link>
+
+    <gazebo reference="${fb}_axle">
+      <material>Gazebo/Gold</material>
+    </gazebo>
+
+    <joint name="${fb}_axle_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${fb}_axle"/>
+      <axis xyz="0 0 1"/>
+      <origin xyz="${tX} 0 ${tZ}" rpy="${flipX*M_PI} 0 0" />
+      <limit upper="0" lower="0" friction="100.0" effort="100000.00" velocity="0.000"/>
+    </joint>
+    <!-- Transmission is important to link the joints and the controller -->
+    <!--transmission name="${fb}_axle_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_axle_joint" >
+		  <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface> 
+      </joint>
+      <actuator name="${fb}_axle_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission-->
+
+  </xacro:macro>
+	
+	<!-- bonnet & hood -->
+	<xacro:macro name="bonnet_hood_inertia" params="m r">
+    <inertia  ixx="(${m}*${r})/2}" ixy = "0" ixz = "0"
+              iyy="(${m}*${r})/6}" iyz = "0"
+              izz="(${m}*${r})/16" /> 
+  </xacro:macro>
+	
+	<xacro:macro name="bonnet_hood" params="bh parent trX trY trZ flipY color l w h m"> <!--bh : bonnet, hood-->
+    <link name="${bh}">
+		 <origin xyz="${trX}  ${trY} ${trZ}" rpy="0 ${flipY*M_PI} 0" /> 
+		 <material name="${color}" /> 
+      <visual>
+		  <origin xyz="${-trX/2} 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="${w} ${l} ${h}"/>
+        </geometry>
+      </visual>
+      <collision>
+		  <origin xyz="${-trX/2} 0 0" rpy="0 0 0" />
+        <geometry>
+           <box size="${w} ${l} ${h}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia m="${m}" b="${w}" h="${l}" d="${h}"/>
+      </link>
+    <myColor col="${color}" ref="${bh}" />
+
+    <joint name="${bh}_joint" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${bh}"/>
+      <origin xyz="${trX}  ${trY} ${trZ}" rpy="0 ${flipY*M_PI} 0" /> 
+      <axis xyz="0 1 0" rpy="0 1 0" />
+      <limit effort="100" velocity="0" lower="${flipY*M_PI}" upper="0.7853"/>
+      <joint_properties damping="1000.0" friction="100.0"/>
+    </joint>
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${bh}_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${bh}_joint" >
+		  <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+	 </joint>
+      <actuator name="${bh}_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+
+	<!-- bus engine -->
+	<xacro:macro name="engine" params="parent trX trY trZ m fX fY l w h col">
+	<link name="bus_engine">
+	<visual>
+		<!--origin xyz="${trX} ${trY} ${trZ}" rpy="${fX*M_PI} ${fY*M_PI} 0"/-->
+		<geometry>
+			<box size="${w} ${l} ${h}"/>
+		</geometry>
+	</visual>
+	<collision>
+		<!--origin xyz="${trX} ${trY} ${trZ}" rpy="${fX*M_PI} ${fY*M_PI} 0"/-->
+		<geometry>
+			<box size="${w} ${l} ${h}"/>
+		</geometry>
+	</collision>
+	 <xacro:box_inertia m="${m}" b="${w}" h="${l}" d="${h}"/>
+	</link>
+	<xacro:myColor col="${col}" ref="bus_engine"/>
+	<joint name="bus_engine_joint" type="prismatic">
+		<parent link="${parent}" />
+		<child link="bus_engine"/>
+		<origin xyz="${trX} ${trY} ${trZ}" rpy="${fX*M_PI} ${fY*M_PI} 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="100" velocity="0" lower="0" upper="0.0001"/>
+		<origin xyz="${trX} ${trY} ${trZ}" rpy="${fX*M_PI} ${fY*M_PI} 0"/>
+	</joint>
+	
+	 <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="bus_engine_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="bus_engine_joint" >
+		  <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+	  </joint>
+      <actuator name="bus_engine_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      </transmission>
+	</xacro:macro>
+
+	<!-- windscreens name: rear or front -->
+ <xacro:macro name="windscreen" params="name x cX cY y z r p yaw par m l w h col">
+<link name="${name}_windscreen">
+	<visual>
+		<transparency>1.00</transparency>
+		<geometry>
+		<box size="${l} ${w} ${h}"/>
+	</geometry>
+	</visual>
+	<collision>
+	<geometry>
+		<box size="${l} ${w} ${h}"/>
+	</geometry>
+	</collision>
+	<xacro:box_inertia m="${m}" b="${l}" h="${w}" d="${h}"/>
+</link>
+<xacro:my_camera parent="${name}_windscreen" pos="${name}_windscreen"
+		rX="0" rY="0" rZ="1" tX="${-0.05}" tY="0" tZ="0"
+		fX="${cX}" fY="${-.65+cY}" fZ="0"/>
+		 
+<gazebo reference="${name}_windscreen">
+      <material>Gazebo/GreenTransparent</material>
+    </gazebo>
+<joint name="${name}_windscreen_joint" type="prismatic">
+<parent link="${par}"/>
+<child link="${name}_windscreen"/>
+<limit upper="0" lower="0" effort="20" friction="2000" velocity="0.001"/>
+<axis xyz="1 0 0"/>
+<origin xyz="${x} ${y} -${0.5*l}" rpy=" ${r*M_PI} ${p*M_PI} ${yaw*M_PI}"/>
+</joint>
+<transmission name="${name}_windscreen_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_windscreen_joint">
+		  <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+	  </joint>
+      <actuator name="${name}_windscreen_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+</xacro:macro>
+</robot>

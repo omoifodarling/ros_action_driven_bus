@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package>
+  <name>navya_control</name>
+  <version>0.0.0</version>
+  <description>The navya_control package</description>
+
+  <maintainer email="omoifodarling@gmail.com">Darlington Omoifo</maintainer>
+
+  <license>BSD</license>
+
+  <author email="omoifodarling@gmail.com">Darlington Omoifo</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+<run_depend>controller_manager</run_depend>
+  <run_depend>joint_state_controller</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+	<run_depend>move_base_msgs </run_depend>
+	<run_depend>actionlib</run_depend> 
+
+  <run_depend>rqt_gui</run_depend>
+  <run_depend>effort_controllers</run_depend>
+  
+  <build_depend>controller_manager</build_depend>
+	<build_depend>joint_state_controller</build_depend>
+	<build_depend>robot_state_publisher</build_depend>
+	<build_depend>roscpp</build_depend>
+	<build_depend>rqt_gui</build_depend>
+<build_depend>move_base_msgs</build_depend>
+	<build_depend>actionlib</build_depend>
+<build_depend>effort_controllers</build_depend>
+
+ 
+  <export>
+  </export>
+
+</package>

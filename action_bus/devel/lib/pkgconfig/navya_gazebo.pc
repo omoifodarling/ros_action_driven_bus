@@ -1,0 +1,8 @@
+prefix=/home/darling/Desktop/navya_working_copy/devel
+
+Name: navya_gazebo
+Description: Description of navya_gazebo
+Version: 0.1.0
+Cflags: 
+Libs: -L/home/darling/Desktop/navya_working_copy/devel/lib 
+Requires: 

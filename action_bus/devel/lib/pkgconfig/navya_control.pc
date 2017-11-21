@@ -1,0 +1,8 @@
+prefix=/home/darling/Desktop/navya_working_copy/devel
+
+Name: navya_control
+Description: Description of navya_control
+Version: 0.0.0
+Cflags: -I/home/darling/Desktop/navya_working_copy/devel/include
+Libs: -L/home/darling/Desktop/navya_working_copy/devel/lib 
+Requires: 

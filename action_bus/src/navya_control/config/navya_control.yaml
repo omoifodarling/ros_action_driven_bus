@@ -1,0 +1,45 @@
+navya_bus:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50  
+  
+  # Position Controllers ---------------------------------------
+  tyres_controller:
+    type: velocity_controllers/JointGroupVelocityController
+    joints: 
+      - front_left_wheel_joint
+      - front_right_wheel_joint
+      - rear_left_wheel_joint
+      - rear_right_wheel_joint
+    pids: 
+      - {p: 250.0, i: 0.01, d: 10.0}
+      - {p: 250.0, i: 0.01, d: 10.0}
+      - {p: 250.0, i: 0.01, d: 10.0}
+      - {p: 250.0, i: 0.01, d: 10.0}
+  steering_controller:
+    type: velocity_controllers/JointGroupVelocityController
+    joints: 
+      - front_left_wheel_rim_joint
+      - front_right_wheel_rim_joint
+    pids: 
+      - {p: 100.0, i: 0.01, d: 10.0}
+      - {p: 100.0, i: 0.01, d: 10.0}
+  l_door_controller:
+    type: position_controllers/JointPositionController
+    joint: left_door_joint
+    pid: {p: 20.0, i: 0.01, d: 10.0}
+  r_door_controller:
+    type: position_controllers/JointPositionController
+    joint: right_door_joint
+    pid: {p: 20.0, i: 0.01, d: 10.0}
+  l_door_anc_controller:
+    type: effort_controllers/JointVelocityController
+    joint: left_door_anchor_joint
+    pid: {p: 20.0, i: 0.01, d: 10.0}
+  r_door_anc_controller:
+    type: effort_controllers/JointVelocityController
+    joint: right_door_anchor_joint
+    pid: {p: 20.0, i: 0.01, d: 10.0}
+  
+

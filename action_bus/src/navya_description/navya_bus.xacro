@@ -1,0 +1,392 @@
+<?xml version="1.0"?>
+
+<robot name="navya_bus" xmlns:xacro="http://www.ros.org/wiki/xacro">
+	
+	<xacro:include filename="$(find navya_description)/urdf/materials.xacro"/>
+	<xacro:include filename="$(find navya_description)/urdf/bus_macros_old.xacro"/>
+
+<property name="vehicle_height" value="2.10" />
+
+<!-- base_chassis properties -->
+<property name="chassis_length" value="3.40" /> 
+ <property name="chassis_width" value="2.10" />
+ <property name="chassis_height" value="0.05" />
+ <property name="chassis_mass" value="2700.000" />
+ 
+ <!-- door properties -->
+ <property name="door_width" value="0.702"/>
+ <property name="door_length" value="${vehicle_height}"/>
+ <property name="door_height" value="${chassis_height}"/>
+ 
+ 
+ <!-- guard -->
+<property name="frontguard_width" value="${vehicle_height*0.3}" />
+<property name="frontguard_height" value="0.02" /> 
+<property name="frontguard_length" value="${chassis_width-2*chassis_height}" />
+<property name="frontguard_mass" value="200.000" />  
+<property name="rearguard_width" value="${vehicle_height*0.55}" />
+<property name="rearguard_height" value="0.02" /> 
+ <property name="rearguard_length" value="${chassis_width -2*chassis_height}" />
+<property name="rearguard_mass" value="180.000" /> 
+
+<!-- axle -->
+ <property name="axle_radius" value="0.05" />
+ <property name="axle_length" value="2.2" />
+<property name="axle_mass" value="70.000" />
+<property name="axle_pos" value="${(chassis_length*0.5*0.8)}"/>
+ 
+ <!-- rim -->
+ <property name="rim_mass" value="200.00" /> 
+ <property name="rim_radius" value="${(axle_radius)*2}" /> 
+ <property name="rim_length" value="0.03" />
+ <property name="rim_y_pos" value="${axle_length*0.5}"/>
+ <property name="rim_y_t_pos" value="${.08391+.5*rim_length+rim_y_pos}"/>
+  <property name="tyre_y_t_pos" value="${.7*wheel_length+.5*rim_length}"/>
+ <property name="rim_x_pos" value="${axle_pos}"/>
+ 
+ 
+ <!-- wheels -->
+<property name="wheel_radius" value="${rim_radius*2.5}" /> 
+<property name="wheel_length" value="0.102" /> 
+<property name="wheel_mass" value="21.00" /> 
+<property name="wheel_y_pos" value="${rim_y_pos+rim_length}"/>
+ <property name="wheel_x_pos" value="${axle_pos}"/>
+
+<!-- pedals -->
+ <property name="pedal_mass" value="0.90" /> 
+ <property name="pedal_radius" value="0.03" />
+ <property name="pedal_height" value="0.12" /> 
+ 
+ <!-- front side base_chassis -->
+<property name="front_side_chassis_width" value="${chassis_length*0.3}" /> 
+<!-- rear side base_chassis -->
+<property name="rear_side_chassis_width" value="${chassis_length*0.4}" /> 
+<!--  side door base_chassis -->
+<property name="side_door_width" value="${chassis_length*0.3}" /> 
+<property name="side_door_mass" value="40.00" />
+
+<!-- All side base_chassis properties -->
+ <property name="side_chassis_length" value="${vehicle_height}" />
+ <property name="side_chassis_height" value="${chassis_height}" />
+ <property name="side_chassis_mass" value="30.0" />
+ 
+ 
+ <!-- rear side base_chassis -->
+<property name="rear_side_chassis_width" value="${chassis_length*0.4}" /> 
+
+<!-- lights properties-->
+
+ <property name="foglight_height" value="0.005" />
+ <property name="foglight_mass" value="0.052" />
+ <property name="trafficator_radius" value="0.08"/>
+ <property name="trafficator_mass" value="1.8"/>
+ <property name="foglight_radius" value="${trafficator_radius*0.7}" />
+ <property name="tr_light_length" value="0.020" />
+ <property name="tr_light_width" value="0.0110" />
+ <property name="tr_light_height" value="0.005" />
+ <property name="tr_light_mass" value="0.452" />
+ <property name="headlight_length" value="0.3" />
+ <property name="headlight_width" value="0.2" />
+ <property name="headlight_height" value="0.05" />
+ <property name="headlight_mass" value="1.02" />
+ <property name="rearlight_radius" value="0.050" /> 
+ <property name="rearlight_length" value="0.015" />
+ <property name="rearlight_mass" value="0.815" />
+ <property name="breaklight_radius" value="0.0450" /> 
+ <property name="breaklight_length" value="0.013" />
+ <property name="breaklight_mass" value="0.715" />
+ 
+ <!-- steering properties -->
+ <property name="steering_radius" value="0.120" /> 
+ <property name="steering_length" value="0.015" />
+ <property name="steering_mass" value="12.015" />
+ 
+ <!-- engine properities -->
+  <property name="engine_length" value="${chassis_width-side_chassis_height*3}"/>
+<property name="engine_width" value="0.30"/>
+<property name="engine_height" value="0.36"/>
+<property name="engine_mass" value="80.03"/>
+
+ 
+ <!-- std heights -->
+ <property name="fg_base_height" value="0.502"/>
+ <property name="rg_base_height" value="0.0502"/>
+ <property name="ch_base_height" value="${axle_radius+wheel_radius+0.0001}"/>
+  <property name="roof_base_height" value="${ch_base_height+vehicle_height}"/>
+  
+  
+  <!-- door anchor propeties -->
+  <property name="door_anc_length" value="0.70"/>
+  <property name="door_anc_width" value="${chassis_height*4}"/>
+  <property name="door_anc_height" value="${chassis_height}"/>
+  <property name="door_anc_mass" value="2.67"/>
+  
+  
+  <!-- WE START TO BUILD FROM HERE : ENJOY-->
+  
+  
+<link name="world"></link>
+
+<xacro:chassis pos="base" x="0" y="0" z="${ch_base_height}" r="0" p="0" yaw="0" color="White" tY="0" m="600.00" 
+par="world" l="${chassis_length}"/>
+<xacro:chassis pos="roof" x="0" y="0" z="${roof_base_height}" r="0" p="0" yaw="0" color="Grey" tY="0" m="180" 
+par="world" l="${chassis_length*0.8}"/>
+
+<!-- axles -->
+<xacro:axle fb="front" r="${axle_radius}" l="${axle_length}" m="200.00" parent="world" tX="${axle_pos}" 
+tZ="${(wheel_radius)}" flipX="0.5" xOr="0" yOr="0" zOr="0"/>
+<xacro:axle fb="rear" r="${axle_radius}" l="${axle_length}" m="200.00" parent="world" tX="-${axle_pos}" 
+tZ="${(wheel_radius)}" flipX="0.5" xOr="0" yOr="0" zOr="0"/> 
+	
+<!-- adding the front rims  up="${(1/3)}", but use 0 for view-->
+<xacro:front_wheel_rim fb="front" lr="left" r="${rim_radius}" l="${rim_length}" m="${rim_mass}" parent="front_axle" 
+tZ="-${rim_y_t_pos}" flipX="0.5"  up="${(1/6)}" lo="-${(1/6)}" rY="1"/>
+<xacro:front_wheel_rim fb="front" lr="right" r="${rim_radius}" l="${rim_length}" m="${rim_mass}" parent="front_axle" 
+tZ="${rim_y_t_pos}" flipX="0.5"  up="${(1/6)}" lo="-${(1/6)}"  rY="1"/>
+
+<!-- adding the rear rims -->
+<xacro:rear_wheel_rim fb="rear" lr="left" r="${rim_radius}" l="${rim_length}" m="${rim_mass}" parent="rear_axle"  
+tZ="-${rim_y_t_pos}" flipX="0.5"/>
+<xacro:rear_wheel_rim fb="rear" lr="right" r="${rim_radius}" l="${rim_length}" m="${rim_mass}" parent="rear_axle" 
+tZ="${rim_y_t_pos}" flipX="0.5"/>
+
+
+<!-- Adding the front tyres.  rim tyre sep dis is 0.2m " radius of turning, orientation changes 0.2165064 the sign here. max car turning angle is about 33 degrees
+but I am allowing a +- 3 diff meaning safe calc at 30 degrees. With this angle 22cm (par is 10cm from and its 12 cm from parent) from the chassis 
+is just more than enough as it will not make any contact with the chassis -->
+<xacro:wheel fb="front" lr="left" wr="${wheel_radius}" wl="${wheel_length}" wm="${wheel_mass}" parent="front_left_wheel_rim" tZ="-${tyre_y_t_pos}"
+ flipX="0"/>
+<xacro:wheel fb="front" lr="right" wr="${wheel_radius}" wl="${wheel_length}" wm="${wheel_mass}" parent="front_right_wheel_rim" tZ="${tyre_y_t_pos}" flipX="0" />
+ro
+<!-- Adding rear tyres possibly add turning radius to front wheels of .25meters on y plane 
+tY=1.45, expand rear axle length by .50meters, this rear's
+ parent cant be found by gazebo-->
+<xacro:wheel fb="rear" lr="left" wr="${wheel_radius}" wl="${wheel_length}" 
+wm="${wheel_mass}" parent="rear_left_wheel_rim" tZ="-${tyre_y_t_pos}" flipX="0"
+ />
+<xacro:wheel fb="rear" lr="right" wr="${wheel_radius}" wl="${wheel_length}" 
+wm="${wheel_mass}" parent="rear_right_wheel_rim" tZ="${tyre_y_t_pos}" flipX="0"
+ />
+
+
+
+<!-- Let's work on the front guard now , there is a .2m joint elevation on z plane. So, we are adding .2 to the 0.002-->
+<xacro:guard fr="front" parent="base_chassis" trX="${((0.5*chassis_length)-rearguard_height)}" trY="0.0" 
+trZ="${.5*frontguard_width}" flipY="0.5" flipX="0.5" color="DarkGrey" l="${frontguard_length}" w="${frontguard_width}"
+ h="${frontguard_height}" m="${frontguard_mass}" />
+
+<!-- Let's work on the rear guard now , there is a further .3m joint elevation on z plane. So, we are adding .5 to the 0.002-->
+
+<!--xacro:guard fr="rear" parent="base_chassis" trX="${(-(0.5*chassis_length)+rearguard_height)}"  trY="0.0" 
+trZ="${rearguard_width-ch_base_height}" flipY="0.5" flipX="0.5" color="FlatBlack" l="${rearguard_length}" w="${rearguard_width}"
+ h="${rearguard_height}" m="${rearguard_mass}"${rearguard_width-ch_base_height} /-->
+  
+ <!--xacro:boot_guard fr="rear" parent="rear_windscreen" trX="${-(1.15)}"  trY="0.0" 
+trZ="0" flipY="${0.1570477/2}" flipZ="1" color="FlatBlack" l="${rearguard_length}" w="${rearguard_width}"
+ h="${rearguard_height}" m="${rearguard_mass}" /-->
+ 
+  <xacro:boot_guard fr="rear" parent="rear_windscreen" trX="${-(1.1)}"  trY="0.0" 
+trZ="0.00" flipY="${0.1570477/1.6}" flipZ="1" color="FlatBlack" l="${rearguard_length}" w="${rearguard_width}"
+ h="${rearguard_height}" m="${rearguard_mass}" />
+
+
+<!--Now it is time to add the front guard lights edge offset 3mm (.003)-->
+
+<!-- headlights  tz red x ty inc y, ${(0.5*chassis_length)}-->
+<xacro:light_box fb="front" lr="left" parent="front_guard" trX="0.01" trY="0.7" 
+trZ="0.05" flipZ="0.5" flipY="0.5" type="head" color="White" l="${headlight_length}" w="${headlight_width}"
+ h="${headlight_height}" m="${headlight_mass}" mZ="1" mY="0"/>
+	
+ <xacro:light_box fb="front" lr="right" parent="front_guard" trX="0.01" trY="-0.7"
+  trZ="0" flipY="0.5" flipZ="0.5" type="head" color="White" l="${headlight_length}" w="${headlight_width}"
+   h="${headlight_height}" m="${headlight_mass}" mZ="1" mY="0" />
+	
+<!-- trafficators. ty inc z & tz red y-->
+<xacro:light_sphere fb="front" lr="left" parent="front_guard" trX="1.708" trY="-0.90" trZ="${(foglight_radius*2+0.01)}"
+ type="trafficator" color="Orange" r="${trafficator_radius}"  m="${trafficator_mass}" />
+ 
+ <xacro:light_sphere fb="front" lr="right" parent="front_guard" trX="1.708" trY="0.90" trZ="${(foglight_radius*2+0.01)}"
+  type="trafficator" color="Orange" r="${trafficator_radius}"  m="${trafficator_mass}" />
+  
+  <!-- Foglights add anything to  height for z-plane dispalcemnt in the 3D . Add funny hdlght color for curiousity sake-->
+<xacro:light_sphere fb="front" lr="left" parent="front_guard" trX="1.708" trY="-0.90" trZ="0.002"
+ type="fog" color="Yellow" r="${foglight_radius}"  m="${foglight_mass}"/>
+ 
+ <xacro:light_sphere fb="front" lr="right" parent="front_guard" trX="1.708" trY="0.90" trZ="0.002"
+  type="fog" color="Yellow" r="${foglight_radius}"  m="${foglight_mass}"/>
+  
+  
+  
+  <!--Now it is time to add the rear guard lights edge offset 3mm (.003)-->
+
+<!-- first, add the left rear side chassis -->
+<xacro:chassis_body fb="rear" lr="left" parent="base_chassis" trX="-${0.5*(chassis_length-rear_side_chassis_width)}" 
+trY="${(chassis_width*0.5-side_chassis_height)}" trZ="${0.5*side_chassis_length}" flipY="0" flipX="0.5" color="Grey" 
+w="${side_chassis_length}" l="${rear_side_chassis_width}" h="${side_chassis_height}" m="${side_chassis_mass}"
+/>
+<!-- then, add the right rear side chassis -->
+<xacro:chassis_body fb="rear" lr="right" parent="base_chassis" trX="-${0.5*(chassis_length-rear_side_chassis_width)}" 
+trY="${-(chassis_width*0.5-side_chassis_height)}" trZ="${0.5*side_chassis_length}" flipY="0" flipX="0.5" color="Grey" 
+w="${side_chassis_length}" l="${rear_side_chassis_width}" h="${side_chassis_height}"
+ m="${side_chassis_mass}"/>
+
+
+<!-- rearlights add anything to frontguard_base height for z-plane dispalcemnt in the 3D .y is Z nd Z is Y plaens -->
+<xacro:light_sphere fb="rear" lr="left" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="0.90" 
+trZ="-0.75" type="rear" color="Turquoise" r="${rearlight_radius*2}"  m="${rearlight_mass}" />
+	
+ <xacro:light_sphere fb="rear" lr="right" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="-0.90" 
+ trZ="-0.75" type="rear" color="Turquoise" r="${rearlight_radius*2}"  m="${rearlight_mass}" 
+ />
+ 
+ 
+ 
+ 
+ <!-- Lights  -->
+ 
+ <!-- breaklights . -->
+<xacro:light_sphere fb="rear" lr="left" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="0.7" 
+trZ="-0.7" type="break" color="Red" r="${breaklight_radius*2}"  m="${breaklight_mass}" />
+	
+<xacro:light_sphere fb="rear" lr="right" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="-0.7" 
+ trZ="-0.7" type="break" color="Red" r="${breaklight_radius*2}"  m="${breaklight_mass}" 
+ />
+ 
+ <!-- reverse lights -->
+ <xacro:light_sphere fb="rear" lr="left" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="0.7" 
+ trZ="${-0.9}" type="reverse" color="White" r="${breaklight_radius*2}"  m="${breaklight_mass}" 
+ />
+	
+ <xacro:light_sphere fb="rear" lr="right" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="-0.7"
+  trZ="${-0.9}" type="reverse" color="White" r="${breaklight_radius*2}"  m="${breaklight_mass}"
+   />
+
+<!-- rear trafficators  tz red x ty inc y-->
+<xacro:light_box fb="rear" lr="left" parent="left_rear_chassis" trX="-0.58" trY="-0.8" trZ="0.2" 
+type="trafficator" flipZ="0" flipY="0" color="Orange" l="${trafficator_radius}"
+ w="${trafficator_radius*0.7}" h="${headlight_height*0.8}" m="${trafficator_mass}" mZ="0" mY="1"
+  />
+ 
+ <xacro:light_box fb="rear" lr="right" parent="right_rear_chassis" trX="-0.58" trY="-0.8" trZ="-0.2"
+  type="trafficator" flipZ="0" flipY="0" color="Orange" l="${trafficator_radius}" 
+  w="${trafficator_radius*0.7}" h="${headlight_height*0.8}" m="${trafficator_mass}"
+   mZ="0" mY="1"
+   />
+  
+  <!-- Foglights  -->
+<xacro:light_sphere fb="rear" lr="left" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="0.90"
+ trZ="-0.95" type="fog" color="Yellow" r="${foglight_radius}"  m="${foglight_mass}" />
+ 
+ <xacro:light_sphere fb="rear" lr="right" parent="rear_guard" trX="${-(0.5*chassis_length)}" trY="-0.90"
+  trZ="-0.95" type="fog" color="Yellow" r="${foglight_radius}"  m="${trafficator_mass}" />
+	
+<!-- bus engine. We used a 15cm .15m offset to the dashboard and front guard accessories  -->
+ 
+<xacro:engine parent="base_chassis" trX="${(0.5*chassis_length-engine_width+.05)}" trY="0" fX="0" fY="0"
+  m="${engine_mass}" col="BlueTransparent" trZ="${chassis_height+engine_height}" l="${engine_length}"
+   w="${engine_width}" h="${engine_height}" />
+
+
+<!-- break anchor & pedal ${(1/6)} used = trX="1.245" trY="0.9" trZ="0.42"-->
+<xacro:anchor_cylinder type="break" r="${pedal_radius}" l="${pedal_height}" parent="bus_engine" 
+m="${pedal_mass}" trX="-0.05" trY="0.45" trZ="-0.25" fZ="0" fY="${-(1/6)}" />
+<xacro:pedal type="break" l="${pedal_radius*4}" w="${pedal_radius*2}" h="${(pedal_height/4)}" 
+parent="break_anchor" m="${pedal_mass}" trX="-.05" trY="0.45" trZ="${0.02+pedal_height*(2/3)}" 
+fZ="0" fY="${-(1/6)}" col="Red"/> 
+
+<!-- clutch anchor & pedal ${(1/6)} trX="1.245" trY="0.8" trZ="0.42"-->
+<xacro:anchor_cylinder type="clutch" r="${pedal_radius}" l="${pedal_height}" parent="bus_engine" 
+m="${pedal_mass}" trX="-0.05" trY="0.4" trZ="-0.25" fZ="0" fY="${-(1/6)}" />
+<xacro:pedal type="clutch" l="${pedal_radius*4}" w="${pedal_radius*2}" h="${(pedal_height/4)}" 
+parent="clutch_anchor" m="${pedal_mass}" trX="-.05" trY="0.4" trZ="${0.02+pedal_height*(2/3)}" 
+fZ="0" fY="${-(1/6)}" col="BlueTransparent" /> 
+
+<!-- acclerator anchor & pedal ${(1/6)} trX="1.245" trY="0.7" trZ="0.42" -->
+<xacro:anchor_cylinder type="accelerator" r="${pedal_radius}" l="${pedal_height}" parent="bus_engine"
+ m="${pedal_mass}" trX="-0.05" trY="0.35" trZ="-0.25" fZ="0" fY="${-(1/6)}" />
+<xacro:pedal type="accelerator" l="${pedal_radius*4}" w="${pedal_radius*2}" h="${(pedal_height/4)}"
+ parent="accelerator_anchor" m="${pedal_mass}" trX="-.05" trY="0.35" trZ="${0.02+pedal_height*(2/3)}"
+  fZ="0" fY="${-(1/6)}" col="DarkGrey" /> 
+
+<!-- steering anchor & wheel ${(1/6)} x 1, y .515, z 0.95 trX="1.225" trY="0.52" trZ="0.627"-->
+<xacro:anchor_cylinder type="steering" r="${pedal_radius}" l="${pedal_height*6}" parent="bus_engine"
+ m="${pedal_mass*4}" trX="-0.05" trY="0.26" trZ="0.02" fZ="0" fY="${-(1/6)}" />
+<xacro:steering type="steering" r="${steering_radius}" l="${steering_length}" 
+parent="steering_anchor" m="${pedal_mass}" trX="-0.25" trY="0.2575" trZ="${0.35}" 
+fY="${-(1/6)}" col="Green" /> 
+
+<!-- bonnet -${chassis_width/2}, ${frontguard_width+ch_base_height}-->
+<xacro:bonnet_hood bh="bonnet" parent="front_guard" trX="-${0.5*frontguard_width}" trY="0" 
+trZ="-${engine_width}" flipY="-0.5" color="Purple" l="${engine_length}" w="${engine_width}" 
+h="${engine_height/8}" m="${engine_mass/10}"/>
+
+
+<!-- engine guides -->
+<!-- left -->
+<xacro:chassis_body fb="engine_cover" lr="left" parent="base_chassis" trX="${0.5*(chassis_length-engine_width)}" 
+trY="${(chassis_width*0.5-side_chassis_height*0.5)}" trZ="${.5*frontguard_width}" flipY="0" flipX="0.5" color="Black" 
+l="${engine_width}" w="${frontguard_width}" h="${side_chassis_height}" m="${side_chassis_mass*0.2}"/>
+<!-- right -->
+<xacro:chassis_body fb="engine_cover" lr="right" parent="base_chassis" trX="${0.5*(chassis_length-engine_width)}" 
+trY="-${(chassis_width*0.5-side_chassis_height*0.5)}" trZ="${.5*frontguard_width}" flipY="0" flipX="0.5" color="Black" 
+l="${engine_width}" w="${frontguard_width}" h="${side_chassis_height}" m="${side_chassis_mass*0.2}"/>
+
+
+<!-- front chassis body -->
+<!-- left ${0.5*(chassis_length)-engine_width}-->
+<xacro:chassis_body fb="front" lr="left" parent="base_chassis" trX="0.85" 
+trY="${(chassis_width*0.5-side_chassis_height*0.5)}" trZ="${.5*side_chassis_length}" flipY="0" flipX="0.5" color="DarkGrey" 
+l="${front_side_chassis_width}" w="${side_chassis_length}" h="${side_chassis_height}" m="${side_chassis_mass}"/>
+<!-- right -->
+<xacro:chassis_body fb="front" lr="right" parent="base_chassis" trX="0.85" 
+trY="-${(chassis_width*0.5-side_chassis_height*0.5)}" trZ="${.5*side_chassis_length}" flipY="0" flipX="0.5" color="DarkGrey" 
+l="${front_side_chassis_width}" w="${side_chassis_length}" h="${side_chassis_height}" m="${side_chassis_mass}"/>
+
+
+<!-- now the front windscreen  l="1.51958"-->
+<xacro:windscreen name="front" x="1.365" y="0" z="${1.675}" r="0" p="0.49338" yaw="0" par="roof_chassis"
+ m="12.00" l="1.51958" w="${chassis_width}" h="${chassis_height*0.5}" col="WhiteTransparent"/>
+ 
+ 
+ <!-- now the rear windscreen  l="1.51958", leave the first one below commented-->
+<!--xacro:windscreen name="rear" x="-1.05" y="0" z="${0.16}" r="0" p="0.095492966" yaw="0" par="rear_guard"
+ m="12.00" l="1.02" w="${chassis_width}" h="${chassis_height*0.5}" col="WhiteTransparent"/-->
+ <xacro:windscreen name="rear" x="-1.55" y="0" z="${1.920}" r="0" p="-0.404507" yaw="0" par="roof_chassis"
+ m="12.00" l="1.02" w="${chassis_width}" h="${chassis_height*0.5}" col="WhiteTransparent"/>
+ 
+ 
+ <!-- left door anchor for opening the door against the rear chassis body. This is not the door handle -->
+ <xacro:door_anchor lr="left" par="base_chassis" col="Red" tX="-0.01" fY="0" fX="0" fZ="0" 
+ tY="${chassis_width*0.5}" tZ="0" l="${door_anc_length}"  w="${door_anc_width}" 
+ h="${door_anc_height}" mX="-1" mY="0" mZ="0" m="20.0" color="Purple"/>
+  
+ <!-- right door anchor for opening the door against the rear chassis body. This is not the door handle -->
+ <xacro:door_anchor lr="right" par="base_chassis" col="Red" tX="-0.01"  fY="0" fX="0" fZ="0"
+ tY="-${chassis_width*0.5}" tZ="0" l="${door_anc_length}" w="${door_anc_width}"
+ h="${door_anc_height}" mX="-1" mY="0" mZ="0" m="${door_anc_mass}" color="Purple"/>
+
+<!-- left door is mounted -->
+<xacro:door lr="left" parent="left_door_anchor" trX="0" trY="${0}" mX="0" mY="0" mZ="-1" trZ="${0.5*door_length}" fY="0"
+ fX="0.5" color="Blue" l="${door_length}" w="${door_width}" h="${door_height}"  m="${side_door_mass}" />
+
+<!-- right door is mounted  ${ch_base_height+0.5*door_length}  ${0.5*chassis_width}-->
+<xacro:door lr="right" parent="right_door_anchor" trX="0" trY="-${0}" mX="0" mY="0" mZ="1" trZ="${0.5*door_length}" fY="0" 
+fX="0.5" color="Blue" l="${door_length}" w="${door_width}" h="${door_height}"  m="${side_door_mass}" />
+
+
+<!-- NOW WE ADD THE DOOR HANDLES -->
+
+<xacro:door_handle type="left" par="left_door" l="0.14" w="0.12" h="0.06" tX="0.29" tY="-0.5" tZ="0.0" fX="0.5" color="Brown"/>
+
+<xacro:door_handle type="right" par="right_door" l="0.14" w="0.12" h="0.06" tX="0.29" tY="-0.5" tZ="0.0" fX="0.5" color="Brown"/>
+
+<gazebo>
+  <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <robotNamespace>/navya_bus</robotNamespace>
+    <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+  </plugin>
+</gazebo>
+
+
+</robot>
+
