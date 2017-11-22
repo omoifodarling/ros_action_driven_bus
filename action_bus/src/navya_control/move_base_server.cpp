@@ -110,7 +110,8 @@ public:
 			navya.global_pose.rot.z +=step_rot;
 			/*The right velocity is 2.5*the taget velocity using the vehicle velocity as engine*/
 			//navya.rotate(step_rot*10.0);
-			navya.move(step_dist,navya.iteration_counter);
+            /*We are moving the base at the requested velocity. So using the target_dist per second*/
+			navya.move(target_dist,navya.iteration_counter);
 			feedback_.base_position.pose.position.x = navya.global_pose.pos.x;
 	   }
 		else {
@@ -158,10 +159,6 @@ public:
     }
     
     protected: void rotate(double rot){
-		//ROS_INFO("ROTATING IN ROTATE tyre rotated %.2f rad/sec\n",rot);
-		//It seems multiplexing causes context switch too quickly making either three
-		// or one joint to be rotated. Also, when any front rotates the adjacent does same
-		//Now, let's try rotated the front_left and rear_right only to possibly beat context switch
 		/*for(auto& j:joints)
 			j->SetVelocity(0,rot);*/
 		for(int a = 0; a < 4; a+=3){
@@ -273,4 +270,3 @@ public:
   // Register this plugin with the simulator
   GZ_REGISTER_MODEL_PLUGIN(VehicleDriver)
 }
-
