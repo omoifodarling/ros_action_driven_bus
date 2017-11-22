@@ -109,6 +109,7 @@ public:
 			navya.global_pose.pos.x +=step_dist;
 			navya.global_pose.rot.z +=step_rot;
 			/*The right velocity is 2.5*the taget velocity using the vehicle velocity as engine*/
+			//the engine does the rotation of the tyres or wheels
 			//navya.rotate(step_rot*10.0);
 			navya.move(step_dist,navya.iteration_counter);
 			feedback_.base_position.pose.position.x = navya.global_pose.pos.x;
@@ -158,7 +159,7 @@ public:
     }
     
     protected: void rotate(double rot){
-		//ROS_INFO("ROTATING IN ROTATE tyre rotated %.2f rad/sec\n",rot);
+		
 		//It seems multiplexing causes context switch too quickly making either three
 		// or one joint to be rotated. Also, when any front rotates the adjacent does same
 		//Now, let's try rotated the front_left and rear_right only to possibly beat context switch
@@ -186,7 +187,6 @@ public:
 		
     protected: void move(float dist_2_move,int how_2_accel){
 		if(this->model->GetWorldLinearVel().x == 0.000) iteration_counter = 0;
-		
 		
 		this->model->SetLinearVel(ignition::math::Vector3d(accelerate(dist_2_move),0, 0));
 		//this->model->SetLinearVel(ignition::math::Vector3d(1.0,0, 0));
